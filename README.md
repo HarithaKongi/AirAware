@@ -152,12 +152,6 @@ AirAware/
 └── README.md
 ```
 
-## 🌐 Live Demo
-
-**AirAware:** https://airaware-rho.vercel.app
-
-**GitHub:** https://github.com/HarithaKongi/AirAware
-
 ## 🔒 Security
 
 AirAware uses Supabase Row-Level Security to protect user-specific saved locations.
