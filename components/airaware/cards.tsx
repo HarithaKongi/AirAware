@@ -1,6 +1,7 @@
 'use client'
 
-import { Bookmark, CloudSun, HeartPulse, MapPin, ShieldCheck } from 'lucide-react'
+import { Bookmark, CloudSun, HeartPulse, MapPin, ShieldCheck, Info, BellRing } from 'lucide-react'
+import { useState } from 'react'
 import type { LocationReading, Pollutant } from './types'
 import { colorClasses, formatNumber, formatUpdatedAt } from './types'
 
@@ -14,8 +15,20 @@ export function PollutantCard({ item }: { item: Pollutant }) {
 }
 
 export function HealthAdvice({ category }: { category: string | null }) {
-  const hasReading = Boolean(category)
-  return <section className="rounded-[24px] border border-[#dce9db] bg-[#edf6e8] p-5"><div className="flex items-start gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#d8edc9] text-[#4e8b50]"><HeartPulse size={20} /></div><div><h3 className="font-semibold text-[#244c42]">{hasReading ? `${category} air for your plans` : 'Health guidance unavailable'}</h3><p className="mt-1 text-sm leading-5 text-[#5b746b]">{hasReading ? 'Guidance will update with the latest local reading.' : 'Choose a location to see actionable guidance for today.'}</p></div></div>{hasReading && <div className="mt-4 flex flex-wrap gap-2"><span className="rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium text-[#4e7059]">View guidance</span><span className="rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium text-[#4e7059]">Outdoor plans</span></div>}</section>
+  const guidance: Record<string, { summary: string; action: string }> = {
+    Good: { summary: 'Air quality is generally satisfactory for outdoor activities.', action: 'Enjoy usual outdoor plans. People who are unusually sensitive should still notice symptoms.' },
+    Moderate: { summary: 'Most people can continue normal activities.', action: 'If you are unusually sensitive to air pollution, consider reducing prolonged, intense outdoor exertion if symptoms occur.' },
+    'Unhealthy for sensitive groups': { summary: 'Sensitive people may begin to experience effects.', action: 'Children, older adults, and people with heart or lung conditions should consider reducing prolonged or intense outdoor activity.' },
+    Unhealthy: { summary: 'Health effects are possible for everyone; sensitive groups may feel them sooner.', action: 'Reduce prolonged outdoor exertion. Sensitive groups should avoid strenuous outdoor activity.' },
+    'Very unhealthy': { summary: 'Health alert: the risk of effects is increased.', action: 'Limit outdoor exertion and consider moving activities indoors.' },
+    Hazardous: { summary: 'Health warning: everyone may be affected.', action: 'Avoid strenuous outdoor activity and follow local public-health guidance.' },
+  }
+  const advice = category ? guidance[category] : null
+  return <section className="rounded-[24px] border border-[#dce9db] bg-[#edf6e8] p-5"><div className="flex items-start gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#d8edc9] text-[#4e8b50]"><HeartPulse size={20} /></div><div><h3 className="font-semibold text-[#244c42]">{category ? `${category} air: what it means` : 'Health guidance unavailable'}</h3><p className="mt-1 text-sm leading-5 text-[#5b746b]">{advice?.summary ?? 'Search for a location to see practical guidance.'}</p></div></div>{advice && <div className="mt-4 rounded-2xl bg-white/80 p-4 text-sm leading-5 text-[#426258]"><strong>What you can do</strong><p className="mt-1">{advice.action}</p></div>}<p className="mt-3 text-[11px] leading-4 text-[#71877b]">General information, not medical advice. AQI categories shown here use the US AQI scale; follow local health guidance.</p></section>
 }
 
+export function AlertScenario() {
+  const [preview, setPreview] = useState(false)
+  return <section className="rounded-[24px] border border-dashed border-[#d3b36c] bg-[#fff9e9] p-5"><div className="flex items-start gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#f8edca] text-[#926b22]"><BellRing size={19} /></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h2 className="font-semibold text-[#614c25]">Alert preview</h2><span className="rounded-full bg-[#f3e4b8] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#795b1f]">Simulated demo</span></div><p className="mt-1 text-sm leading-5 text-[#806b42]">Preview how AirAware could communicate an elevated AQI. This is an example only, not a live alert.</p>{preview && <div role="status" className="mt-3 rounded-xl border border-[#eed89b] bg-white p-3 text-sm text-[#614c25]"><strong>Example: AQI 165 — Unhealthy</strong><p className="mt-1">Consider reducing prolonged outdoor exertion. Sensitive groups should avoid strenuous outdoor activity. Check local public-health advice.</p></div>}<button onClick={() => setPreview(!preview)} className="mt-3 rounded-xl bg-[#173f3b] px-4 py-2 text-xs font-semibold text-white">{preview ? 'Hide preview' : 'Preview sample alert'}</button></div></div></section>
+}
 export function StatCard({ label, value }: { label: string; value: string }) { return <div className="rounded-2xl border border-[#dfe9e1] bg-white p-4"><p className="text-xs text-[#879892]">{label}</p><p className="mt-2 text-xl font-semibold text-[#173f3b]">{value}</p></div> }
