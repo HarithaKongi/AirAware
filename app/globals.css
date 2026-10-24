@@ -169,9 +169,9 @@
 
 /* AirAware profile-menu dark theme */
 html.dark body { background: #0b1715 !important; color: #e4f1eb !important; }
-html.dark .min-h-screen.bg-\\[\\#f3f8f6\\] { background: #0b1715 !important; color: #e4f1eb !important; }
-html.dark [class*="bg-white"], html.dark [class*="bg-\\[\\#f7faf6\\]"], html.dark [class*="bg-\\[\\#f8fbf9\\]"] { background-color: #142521 !important; }
-html.dark [class*="bg-\\[\\#f4f8f5\\]"], html.dark [class*="bg-\\[\\#f5f9f6\\]"], html.dark [class*="bg-\\[\\#eff6ee\\]"] { background-color: #1b302a !important; }
-html.dark [class*="text-\\[\\#173f3b\\]"], html.dark [class*="text-\\[\\#163d37\\]"], html.dark [class*="text-\\[\\#35564d\\]"], html.dark [class*="text-\\[\\#536e67\\]"] { color: #dcece4 !important; }
-html.dark [class*="text-\\[\\#71837b\\]"], html.dark [class*="text-\\[\\#61716d\\]"], html.dark [class*="text-\\[\\#83948d\\]"] { color: #a7bdb2 !important; }
-html.dark [class*="border-\\[\\#dce9e4\\]"], html.dark [class*="border-\\[\\#dfe8e3\\]"], html.dark [class*="border-\\[\\#d5e1da\\]"] { border-color: #2a443a !important; }
+html.dark .min-h-screen { background-color: #0b1715 !important; color: #e4f1eb !important; }
+html.dark [class*="bg-white"] { background-color: #142521 !important; }
+html.dark [class*="bg-[#f3f8f6]"], html.dark [class*="bg-[#f7faf6]"], html.dark [class*="bg-[#f8fbf9]"], html.dark [class*="bg-[#f4f8f5]"], html.dark [class*="bg-[#f5f9f6]"], html.dark [class*="bg-[#eff6ee]"] { background-color: #1b302a !important; }
+html.dark [class*="text-[#173f3b]"], html.dark [class*="text-[#163d37]"], html.dark [class*="text-[#35564d]"], html.dark [class*="text-[#536e67]"], html.dark [class*="text-[#214b65]"] { color: #dcece4 !important; }
+html.dark [class*="text-[#71837b]"], html.dark [class*="text-[#61716d]"], html.dark [class*="text-[#83948d]"], html.dark [class*="text-[#5d7c8f]"] { color: #a7bdb2 !important; }
+html.dark [class*="border-[#dce9e4]"], html.dark [class*="border-[#dfe8e3]"], html.dark [class*="border-[#d5e1da]"] { border-color: #2a443a !important; }
