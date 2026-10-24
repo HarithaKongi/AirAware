@@ -2,17 +2,19 @@
 
 > **Real-time air-quality monitoring with maps, location search, authentication and saved places.**
 
-AirAware is a full-stack air-quality dashboard that helps users search locations, monitor live AQI data, explore air quality on an interactive map, and save locations for quick access.
+AirAware is a full-stack air-quality dashboard that helps users search locations, understand the provider's current AQI estimate and available pollutants, explore hourly trends, and save places for quick access. The prototype's AQI field uses the provider's US AQI value; validation against local Indian standards is planned, and the dashboard should not be represented as an official CPCB AQI service.
 
 Built with **Next.js, Supabase, Open-Meteo and Leaflet**.
 
 ## ✨ Features
 
-- 🌍 **Real-Time Air Quality** — Live AQI, PM2.5, PM10, CO, NO₂, SO₂ and O₃ data
+- 🌍 **Current Air Quality** — Provider AQI estimate and available pollutant readings (PM2.5, PM10, CO and NO₂)
 - 🔎 **Location Search** — Search places and view current air quality
 - 📍 **Current Location** — Browser geolocation for local air-quality data
 - 🗺️ **Interactive Map** — Leaflet + OpenStreetMap visualization
-- 📊 **AQI Trends** — Hourly air-quality trend visualization
+- 📊 **AQI Trends** — Hourly trend visualization with a value-aware chart scale
+- 📘 **Learn Section** — Plain-language explanations of AQI and key pollutants
+- 💚 **Health Guidance** — General category-based precautions, with a health-information disclaimer
 - 🔐 **Authentication** — Supabase-powered sign-up and sign-in
 - ⭐ **Saved Locations** — Save, load and remove frequently used locations
 - 🔒 **Row-Level Security** — Users can access only their own saved locations
@@ -66,6 +68,14 @@ npm run dev
 ```
 
 Open `http://localhost:3000`.
+
+## 🧭 Roadmap and data caveats
+
+- **Prototype today:** location search/current location, current provider AQI and available pollutants, hourly trend, interactive map, plain-language learning and general precautions, authentication and saved locations.
+- **Next:** verify provider values, units and AQI category boundaries; improve source/freshness transparency; pilot with students and measure comprehension and request success.
+- **Later:** investigate official monitoring integrations, optional alerts and low-cost sensors where coverage is limited.
+- The map uses OpenStreetMap for map display only; it does not provide pollution measurements.
+- Pilot outcomes, health outcomes and adoption have not yet been measured. Health guidance is informational and not medical advice.
 
 ## 📌 Project Highlights
 
