@@ -49,7 +49,7 @@ function transform(data: ProviderResponse, location: { name: string; region?: st
   const values = data.hourly?.us_aqi ?? []
   const trend = times.map((time, index) => ({ label: new Intl.DateTimeFormat('en', { hour: 'numeric' }).format(new Date(time)), value: values[index] })).filter((point): point is { label: string; value: number } => typeof point.value === 'number').slice(-24)
   if (aqi === null || !pollutants.some((pollutant) => pollutant.value !== null)) throw new Error('The provider returned no current air-quality data.')
-  return { location, aqi, category: categoryFor(aqi), updatedAt: typeof current.time === 'string' ? current.time : new Date().toISOString(), pollutants, trend }
+  return { location, aqi, category: categoryFor(aqi), updatedAt: typeof current.time === 'string' ? current.time : null, dataSource: 'Open-Meteo Air Quality API', dataType: 'Model-based estimate', aqiStandard: 'US AQI', pollutants, trend }
 }
 
 async function fetchJson(url: string) {
