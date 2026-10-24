@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'\nimport { X, UserRound, Mail, CheckCircle2, AlertCircle } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { X, UserRound, Mail, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { Activity, BookOpen, Bookmark, CheckCircle2, ChevronRight, Clock3, Info, Leaf, MapPin, Wind } from 'lucide-react'
 import { AuthForm } from '@/components/airaware/auth-form'
@@ -15,9 +16,13 @@ import type { LocationReading, SavedLocation } from '@/components/airaware/types
 export default function Page() {
   const [reading, setReading] = useState<LocationReading>(emptyReading)
   const [saved, setSaved] = useState<SavedLocation[]>([])
-  const [user, setUser] = useState<{ id: string; initials: string; name: string } | null>(null)
+  const [user, setUser] = useState<{ id: string; initials: string; name: string; email: string } | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [authOpen, setAuthOpen] = useState(false)\n  const [profileOpen, setProfileOpen] = useState(false)\n  const [passwordMessage, setPasswordMessage] = useState('')\n  const [passwordError, setPasswordError] = useState('')\n  const [darkMode, setDarkMode] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [passwordMessage, setPasswordMessage] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [darkMode, setDarkMode] = useState(false)
   const [pending, setPending] = useState(false)
   const [savedLoading, setSavedLoading] = useState(false)
   const [savingLocation, setSavingLocation] = useState(false)
@@ -33,7 +38,15 @@ export default function Page() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  useEffect(() => { const stored = window.localStorage.getItem('airaware-theme') === 'dark'; setDarkMode(stored); document.documentElement.classList.toggle('dark', stored) }, [])\n  function toggleDarkMode() { setDarkMode((current) => { const next = !current; window.localStorage.setItem('airaware-theme', next ? 'dark' : 'light'); document.documentElement.classList.toggle('dark', next); return next }) }\n  async function sendPasswordReset() {\n    setPasswordMessage(''); setPasswordError('')\n    if (!user?.email) { setPasswordError('Your account email could not be found. Please sign in again.'); return }\n    try { const { error } = await createClient().auth.resetPasswordForEmail(user.email, { redirectTo: window.location.origin + '/auth/update-password' }); if (error) throw error; setPasswordMessage('Password reset email sent to ' + user.email + '. Check your inbox and spam folder.') } catch (caught) { setPasswordError(getSupabaseErrorMessage(caught)) }\n  }\n\n  async function refreshSaved() {
+  useEffect(() => { const stored = window.localStorage.getItem('airaware-theme') === 'dark'; setDarkMode(stored); document.documentElement.classList.toggle('dark', stored) }, [])
+  function toggleDarkMode() { setDarkMode((current) => { const next = !current; window.localStorage.setItem('airaware-theme', next ? 'dark' : 'light'); document.documentElement.classList.toggle('dark', next); return next }) }
+  async function sendPasswordReset() {
+    setPasswordMessage(''); setPasswordError('')
+    if (!user?.email) { setPasswordError('Your account email could not be found. Please sign in again.'); return }
+    try { const { error } = await createClient().auth.resetPasswordForEmail(user.email, { redirectTo: window.location.origin + '/auth/update-password' }); if (error) throw error; setPasswordMessage('Password reset email sent to ' + user.email + '. Check your inbox and spam folder.') } catch (caught) { setPasswordError(getSupabaseErrorMessage(caught)) }
+  }
+
+  async function refreshSaved() {
     if (!user) { setSaved([]); setSavedLoading(false); setSavedError(''); return }
     setSavedLoading(true)
     setSavedError('')
