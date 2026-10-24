@@ -12,6 +12,9 @@ export type LocationReading = {
   aqi: number | null
   category: string | null
   updatedAt: string | null
+  dataSource?: string
+  dataType?: string
+  aqiStandard?: string
   pollutants: Pollutant[]
   trend: Array<{ label: string; value: number }>
 }
@@ -47,8 +50,9 @@ export function formatNumber(value: number | null) {
 
 export function formatUpdatedAt(updatedAt: string | null) {
   if (!updatedAt) return 'Awaiting live data'
-  const minutes = Math.round((new Date(updatedAt).getTime() - Date.now()) / 60000)
-  return `Updated ${new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(minutes, 'minute')}`
+  const timestamp = new Date(updatedAt)
+  if (Number.isNaN(timestamp.getTime())) return 'Provider timestamp unavailable'
+  return `Provider timestamp: ${new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(timestamp)}`
 }
 
 export function coordinatesMatch(a: Pick<SavedLocation, 'latitude' | 'longitude'>, latitude: number, longitude: number) {
