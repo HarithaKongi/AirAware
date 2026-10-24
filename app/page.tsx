@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'\nimport { X, UserRound, Mail, CheckCircle2, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { Activity, BookOpen, Bookmark, CheckCircle2, ChevronRight, Clock3, Info, Leaf, MapPin, Wind } from 'lucide-react'
 import { AuthForm } from '@/components/airaware/auth-form'
@@ -17,7 +17,7 @@ export default function Page() {
   const [saved, setSaved] = useState<SavedLocation[]>([])
   const [user, setUser] = useState<{ id: string; initials: string; name: string } | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [authOpen, setAuthOpen] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)\n  const [profileOpen, setProfileOpen] = useState(false)\n  const [passwordMessage, setPasswordMessage] = useState('')\n  const [passwordError, setPasswordError] = useState('')\n  const [darkMode, setDarkMode] = useState(false)
   const [pending, setPending] = useState(false)
   const [savedLoading, setSavedLoading] = useState(false)
   const [savingLocation, setSavingLocation] = useState(false)
@@ -28,12 +28,12 @@ export default function Page() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => { const next = data.user; if (next) setUser({ id: next.id, initials: getUserInitials(next), name: getUserName(next) }) })
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => { const next = session?.user; setUser(next ? { id: next.id, initials: getUserInitials(next), name: getUserName(next) } : null) })
+    supabase.auth.getUser().then(({ data }) => { const next = data.user; if (next) setUser({ id: next.id, initials: getUserInitials(next), name: getUserName(next), email: next.email ?? '' }) })
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => { const next = session?.user; setUser(next ? { id: next.id, initials: getUserInitials(next), name: getUserName(next), email: next.email ?? '' } : null) })
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  async function refreshSaved() {
+  useEffect(() => { const stored = window.localStorage.getItem('airaware-theme') === 'dark'; setDarkMode(stored); document.documentElement.classList.toggle('dark', stored) }, [])\n  function toggleDarkMode() { setDarkMode((current) => { const next = !current; window.localStorage.setItem('airaware-theme', next ? 'dark' : 'light'); document.documentElement.classList.toggle('dark', next); return next }) }\n  async function sendPasswordReset() {\n    setPasswordMessage(''); setPasswordError('')\n    if (!user?.email) { setPasswordError('Your account email could not be found. Please sign in again.'); return }\n    try { const { error } = await createClient().auth.resetPasswordForEmail(user.email, { redirectTo: window.location.origin + '/auth/update-password' }); if (error) throw error; setPasswordMessage('Password reset email sent to ' + user.email + '. Check your inbox and spam folder.') } catch (caught) { setPasswordError(getSupabaseErrorMessage(caught)) }\n  }\n\n  async function refreshSaved() {
     if (!user) { setSaved([]); setSavedLoading(false); setSavedError(''); return }
     setSavedLoading(true)
     setSavedError('')
@@ -87,7 +87,7 @@ export default function Page() {
   const sampleTips = ['Avoid intense outdoor exercise if you feel symptoms.', 'Check local public-health advice during poor air quality.', 'Sensitive groups should take extra care outdoors.']
 
   return <div className="min-h-screen bg-[#f3f8f6] text-[#163d37]">
-    <Navbar user={user} onMenu={() => setMenuOpen(!menuOpen)} onSignIn={() => setAuthOpen(true)} onSignOut={signOut} />
+    <Navbar user={user} onMenu={() => setMenuOpen(!menuOpen)} onSignIn={() => setAuthOpen(true)} onSignOut={signOut} onMyProfile={() => setProfileOpen(true)} onPasswordReset={sendPasswordReset} onToggleDarkMode={toggleDarkMode} darkMode={darkMode} />
     {menuOpen && <div className="border-b border-[#dce9e4] bg-white px-5 py-4 md:hidden"><nav className="flex flex-col gap-3 text-sm font-medium text-[#61716d]"><a href="#dashboard" onClick={() => setMenuOpen(false)}>Dashboard</a><a href="#map" onClick={() => setMenuOpen(false)}>Map</a><a href="#saved" onClick={() => setMenuOpen(false)}>Saved locations</a><a href="/learn" onClick={() => setMenuOpen(false)}>Learn</a></nav></div>}
     <div className="mx-auto grid max-w-[1600px] lg:grid-cols-[190px_minmax(0,1fr)]">
       <aside className="hidden min-h-[calc(100vh-72px)] border-r border-[#dce9e4] bg-[#f8fbf9] px-3 py-6 lg:flex lg:flex-col">
@@ -125,6 +125,8 @@ export default function Page() {
         </div>
       </main>
     </div>
+    {profileOpen && user && <div className="fixed inset-0 z-[60] grid place-items-center bg-[#173f3b]/35 p-4 backdrop-blur-sm"><section role="dialog" aria-modal="true" aria-labelledby="profile-title" className="w-full max-w-md rounded-[26px] border border-[#dce9e4] bg-white p-6 shadow-2xl sm:p-7"><div className="flex items-start justify-between"><div><div className="grid size-11 place-items-center rounded-2xl bg-[#e0f4e8] text-[#087d5a]"><UserRound size={21}/></div><h2 id="profile-title" className="mt-4 text-xl font-semibold text-[#173f3b]">My profile</h2><p className="mt-1 text-sm text-[#71837b]">Your AirAware account details.</p></div><button onClick={() => setProfileOpen(false)} aria-label="Close profile" className="grid size-9 place-items-center rounded-full bg-[#f1f6f2] text-[#567169]"><X size={17}/></button></div><div className="mt-6 space-y-3"><div className="rounded-xl bg-[#f4f8f5] p-4"><p className="text-xs font-semibold uppercase tracking-wide text-[#7a9085]">Name</p><p className="mt-1 text-sm font-semibold text-[#173f3b]">{user.name}</p></div><div className="rounded-xl bg-[#f4f8f5] p-4"><p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#7a9085]"><Mail size={13}/>Email</p><p className="mt-1 break-all text-sm font-semibold text-[#173f3b]">{user.email || 'Not available'}</p></div></div><button onClick={() => { setProfileOpen(false); void sendPasswordReset() }} className="mt-5 w-full rounded-full bg-[#087d5a] px-4 py-3 text-sm font-semibold text-white hover:bg-[#06694b]">Send password reset email</button></section></div>}
+    {(passwordMessage || passwordError) && <div role={passwordError ? "alert" : "status"} className={`fixed bottom-5 right-5 z-[70] flex max-w-sm items-start gap-3 rounded-2xl border p-4 shadow-xl ${passwordError ? 'border-red-200 bg-red-50 text-red-800' : 'border-[#bde7d0] bg-[#f0fbf5] text-[#175b43]'}`}><div className="pt-0.5">{passwordError ? <AlertCircle size={18}/> : <CheckCircle2 size={18}/>}</div><p className="flex-1 text-sm leading-5">{passwordError || passwordMessage}</p><button onClick={() => {setPasswordError('');setPasswordMessage('')}} aria-label="Dismiss message"><X size={16}/></button></div>}
     {authOpen && <AuthForm onClose={() => setAuthOpen(false)} onSuccess={() => setAuthOpen(false)}/>}
   </div>
 }
