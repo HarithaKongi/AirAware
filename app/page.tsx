@@ -19,6 +19,7 @@ export default function Page() {
   const [authOpen, setAuthOpen] = useState(false)
   const [pending, setPending] = useState(false)
   const [savedLoading, setSavedLoading] = useState(false)
+  const [savingLocation, setSavingLocation] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [savedError, setSavedError] = useState('')
@@ -32,11 +33,18 @@ export default function Page() {
   }, [])
 
   async function refreshSaved() {
-    if (!user) { setSaved([]); return }
-    setSavedLoading(true); setSavedError('')
-    const result = await getSavedLocations(user.id)
-    if (result.error) setSavedError(getSupabaseErrorMessage(result.error)); else setSaved((result.data ?? []) as SavedLocation[])
-    setSavedLoading(false)
+    if (!user) { setSaved([]); setSavedLoading(false); setSavedError(''); return }
+    setSavedLoading(true)
+    setSavedError('')
+    try {
+      const result = await getSavedLocations(user.id)
+      if (result.error) setSavedError(getSupabaseErrorMessage(result.error))
+      else setSaved((result.data ?? []) as SavedLocation[])
+    } catch (caught) {
+      setSavedError(getSupabaseErrorMessage(caught))
+    } finally {
+      setSavedLoading(false)
+    }
   }
 
   useEffect(() => { refreshSaved() }, [user])
@@ -45,12 +53,30 @@ export default function Page() {
   async function search(value: string) { setPending(true); setError(''); try { setReading(await searchAirQuality(value)) } catch (caught) { setError(getSupabaseErrorMessage(caught)); setReading(emptyReading) } finally { setPending(false) } }
   async function selectSaved(location: SavedLocation) { setPending(true); setError(''); try { setReading(await getCurrentAirQuality(location.latitude, location.longitude)) } catch (caught) { setError(getSupabaseErrorMessage(caught)) } finally { setPending(false) } }
   async function handleSave() {
-    setSaveMessage(''); setSavedError('')
+    setSaveMessage('')
+    setSavedError('')
     if (!user) { setAuthOpen(true); return }
     const { latitude, longitude } = reading.location
-    if (latitude === undefined || longitude === undefined || !reading.location.name) return
-    const result = await saveLocation(user.id, { name: reading.location.name, latitude, longitude })
-    if (result.error) setSavedError(getSupabaseErrorMessage(result.error)); else if (result.duplicate) setSaveMessage('This location is already saved.'); else { setSaveMessage('Location saved.'); await refreshSaved() }
+    if (latitude === undefined || longitude === undefined || !reading.location.name) {
+      setSavedError('Search for a location before saving it.')
+      return
+    }
+    setSavingLocation(true)
+    try {
+      const result = await saveLocation(user.id, { name: reading.location.name, latitude, longitude })
+      if (result.error) setSavedError(getSupabaseErrorMessage(result.error))
+      else if (result.duplicate) setSaveMessage('This location is already saved.')
+      else if (result.data) {
+        const newLocation = result.data as SavedLocation
+        setSaved((current) => [newLocation, ...current.filter((item) => item.id !== newLocation.id)])
+        setSaveMessage('Location saved.')
+        void refreshSaved()
+      }
+    } catch (caught) {
+      setSavedError(getSupabaseErrorMessage(caught))
+    } finally {
+      setSavingLocation(false)
+    }
   }
   async function handleDelete(location: SavedLocation) { if (!user) return; setDeletingId(location.id); setSavedError(''); const result = await deleteSavedLocation(user.id, location.id); if (result.error) setSavedError(getSupabaseErrorMessage(result.error)); else await refreshSaved(); setDeletingId(null) }
   async function signOut() { await createClient().auth.signOut(); setUser(null); setSaved([]) }
@@ -61,14 +87,14 @@ export default function Page() {
 
   return <div className="min-h-screen bg-[#f3f8f6] text-[#163d37]">
     <Navbar user={user} onMenu={() => setMenuOpen(!menuOpen)} onSignIn={() => setAuthOpen(true)} onSignOut={signOut} />
-    {menuOpen && <div className="border-b border-[#dce9e4] bg-white px-5 py-4 md:hidden"><nav className="flex flex-col gap-3 text-sm font-medium text-[#61716d]"><a href="#dashboard" onClick={() => setMenuOpen(false)}>Dashboard</a><a href="#map" onClick={() => setMenuOpen(false)}>Map</a><a href="#saved" onClick={() => setMenuOpen(false)}>Saved locations</a><a href="#learn" onClick={() => setMenuOpen(false)}>Learn</a></nav></div>}
+    {menuOpen && <div className="border-b border-[#dce9e4] bg-white px-5 py-4 md:hidden"><nav className="flex flex-col gap-3 text-sm font-medium text-[#61716d]"><a href="#dashboard" onClick={() => setMenuOpen(false)}>Dashboard</a><a href="#map" onClick={() => setMenuOpen(false)}>Map</a><a href="#saved" onClick={() => setMenuOpen(false)}>Saved locations</a><a href="/learn" onClick={() => setMenuOpen(false)}>Learn</a></nav></div>}
     <div className="mx-auto grid max-w-[1600px] lg:grid-cols-[190px_minmax(0,1fr)]">
       <aside className="hidden min-h-[calc(100vh-72px)] border-r border-[#dce9e4] bg-[#f8fbf9] px-3 py-6 lg:flex lg:flex-col">
         <nav className="space-y-2 text-sm font-medium">
           <a href="#dashboard" className="flex items-center gap-3 rounded-xl bg-[#def2e9] px-3 py-3 text-[#087d5a]"><Activity size={18}/>Dashboard</a>
           <a href="#map" className="flex items-center gap-3 rounded-xl px-3 py-3 text-[#536e67] transition hover:bg-white"><MapPin size={18}/>Map</a>
           <a href="#saved" className="flex items-center gap-3 rounded-xl px-3 py-3 text-[#536e67] transition hover:bg-white"><Bookmark size={18}/>Saved locations</a>
-          <a href="#learn" className="flex items-center gap-3 rounded-xl px-3 py-3 text-[#536e67] transition hover:bg-white"><BookOpen size={18}/>Learn</a>
+          <a href="/learn" className="flex items-center gap-3 rounded-xl px-3 py-3 text-[#536e67] transition hover:bg-white"><BookOpen size={18}/>Learn</a>
         </nav>
         <div className="mt-auto overflow-hidden rounded-2xl border border-[#d8eae1] bg-gradient-to-b from-white to-[#e2f4eb] p-4"><Leaf className="text-[#0a9a6b]" size={24}/><p className="mt-3 text-sm font-semibold text-[#087d5a]">Cleaner air,</p><p className="text-sm text-[#087d5a]">clearer choices.</p><p className="mt-3 text-[11px] leading-4 text-[#718b81]">Understand your local air and plan your day.</p></div>
       </aside>
@@ -83,12 +109,12 @@ export default function Page() {
         <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.95fr)]">
           <div className="min-w-0 space-y-5">
             <div className="grid gap-4 md:grid-cols-[1.05fr_.95fr]">
-              <AQICard reading={reading} saved={isSaved} onSave={handleSave}/>
+              <AQICard reading={reading} saved={isSaved} onSave={handleSave} saving={savingLocation}/>
               <section className="rounded-[22px] border border-[#dce9e4] bg-white p-4 sm:p-5"><div className="mb-3 flex items-center justify-between"><h2 className="font-semibold text-[#173f3b]">Pollutants</h2><span className="flex items-center gap-1 text-[11px] text-[#83948d]"><Info size={13}/>Units shown per pollutant</span></div>{reading.pollutants.length ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-2 xl:grid-cols-3">{reading.pollutants.map((item) => <PollutantCard key={item.name} item={item}/>)}</div> : <div className="grid min-h-36 place-items-center rounded-xl bg-[#f5f9f6] px-4 text-center text-sm text-[#7b9087]">{pending ? 'Loading pollutant values…' : 'Search for a location to see available pollutant values.'}</div>}</section>
             </div>
             <div className="grid gap-5 2xl:grid-cols-2"><AQIChart trend={reading.trend}/><section id="map" className="scroll-mt-6 min-w-0 rounded-[22px] border border-[#dce9e4] bg-white p-4 sm:p-5"><div className="mb-3 flex items-center gap-2"><MapPin size={19} className="text-[#0a9b6b]"/><h2 className="font-semibold text-[#173f3b]">Map</h2></div><AirQualityMap location={reading.location} aqi={reading.aqi} pending={pending}/><p className="mt-3 text-[11px] leading-4 text-[#84968f]">Map for location context only; it does not measure pollution. © OpenStreetMap contributors.</p></section></div>
-            <a href="#learn" className="flex flex-col gap-3 rounded-[20px] border border-[#c9e4f6] bg-[#eff8ff] p-4 transition hover:bg-[#e7f4fd] sm:flex-row sm:items-center sm:justify-between sm:p-5"><div className="flex items-start gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-xl bg-white text-[#2776a7]"><BookOpen size={20}/></div><div><h2 className="font-semibold text-[#214b65]">AQI & pollutants — Learn more</h2><p className="mt-1 text-sm text-[#5d7c8f]">Understand what different pollutants mean and how they may affect your health.</p></div></div><span className="inline-flex items-center gap-2 self-start rounded-full border border-[#a5d5bd] bg-white px-4 py-2 text-xs font-semibold text-[#087d5a] sm:self-auto">Explore <ChevronRight size={15}/></span></a>
-            <section id="learn" className="scroll-mt-6 rounded-[22px] border border-[#dce9e4] bg-white p-5"><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#0a9b6b]">Learn</p><h2 className="mt-2 text-xl font-semibold tracking-[-0.03em]">Understand the air, not just the number</h2><p className="mt-2 text-sm leading-6 text-[#71837b]">AQI summarizes air quality in a single number. Pollutant readings can help explain what may be in the air. These descriptions are educational, not a diagnosis.</p><div className="mt-4 grid gap-3 sm:grid-cols-2"><article className="rounded-xl bg-[#f4f8f5] p-3"><h3 className="text-sm font-semibold">PM2.5 · Fine particles</h3><p className="mt-1 text-xs leading-5 text-[#71837b]">Tiny particles that can travel deep into the lungs; sources include combustion, traffic and smoke.</p></article><article className="rounded-xl bg-[#f4f8f5] p-3"><h3 className="text-sm font-semibold">PM10 · Larger particles</h3><p className="mt-1 text-xs leading-5 text-[#71837b]">Particles such as dust and pollen that can irritate the airways.</p></article><article className="rounded-xl bg-[#f4f8f5] p-3"><h3 className="text-sm font-semibold">Carbon monoxide (CO)</h3><p className="mt-1 text-xs leading-5 text-[#71837b]">A colourless gas produced by combustion, including vehicle exhaust.</p></article><article className="rounded-xl bg-[#f4f8f5] p-3"><h3 className="text-sm font-semibold">Nitrogen dioxide (NO₂)</h3><p className="mt-1 text-xs leading-5 text-[#71837b]">A reactive gas often associated with road traffic and fuel burning.</p></article></div><div className="mt-4 flex gap-2 rounded-xl border border-[#eadfc5] bg-[#fffbf1] p-3 text-xs leading-5 text-[#776947]"><Info className="mt-0.5 shrink-0" size={15}/><p>The prototype currently uses the provider's US AQI field. Category boundaries, units and suitability for Indian standards still need validation; this is not an official CPCB AQI reading.</p></div></section>
+            <a href="/learn" className="flex flex-col gap-3 rounded-[20px] border border-[#c9e4f6] bg-[#eff8ff] p-4 transition hover:bg-[#e7f4fd] sm:flex-row sm:items-center sm:justify-between sm:p-5"><div className="flex items-start gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-xl bg-white text-[#2776a7]"><BookOpen size={20}/></div><div><h2 className="font-semibold text-[#214b65]">AQI & pollutants — Learn more</h2><p className="mt-1 text-sm text-[#5d7c8f]">Understand what different pollutants mean and how they may affect your health.</p></div></div><span className="inline-flex items-center gap-2 self-start rounded-full border border-[#a5d5bd] bg-white px-4 py-2 text-xs font-semibold text-[#087d5a] sm:self-auto">Explore <ChevronRight size={15}/></span></a>
+            <section className="rounded-[22px] border border-[#dce9e4] bg-white p-5"><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#0a9b6b]">Learn</p><h2 className="mt-2 text-xl font-semibold tracking-[-0.03em]">Understand the air, not just the number</h2><p className="mt-2 text-sm leading-6 text-[#71837b]">AQI summarizes air quality in a single number. Pollutant readings can help explain what may be in the air. These descriptions are educational, not a diagnosis.</p><div className="mt-4 grid gap-3 sm:grid-cols-2"><article className="rounded-xl bg-[#f4f8f5] p-3"><h3 className="text-sm font-semibold">PM2.5 · Fine particles</h3><p className="mt-1 text-xs leading-5 text-[#71837b]">Tiny particles that can travel deep into the lungs; sources include combustion, traffic and smoke.</p></article><article className="rounded-xl bg-[#f4f8f5] p-3"><h3 className="text-sm font-semibold">PM10 · Larger particles</h3><p className="mt-1 text-xs leading-5 text-[#71837b]">Particles such as dust and pollen that can irritate the airways.</p></article><article className="rounded-xl bg-[#f4f8f5] p-3"><h3 className="text-sm font-semibold">Carbon monoxide (CO)</h3><p className="mt-1 text-xs leading-5 text-[#71837b]">A colourless gas produced by combustion, including vehicle exhaust.</p></article><article className="rounded-xl bg-[#f4f8f5] p-3"><h3 className="text-sm font-semibold">Nitrogen dioxide (NO₂)</h3><p className="mt-1 text-xs leading-5 text-[#71837b]">A reactive gas often associated with road traffic and fuel burning.</p></article></div></section>
           </div>
           <aside className="min-w-0 space-y-5">
             <HealthAdvice category={reading.category}/>

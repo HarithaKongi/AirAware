@@ -20,25 +20,41 @@ export function getUserName(user: AuthUser | null) {
 }
 
 export function getSupabaseErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Something went wrong. Please try again.'
+  if (error instanceof Error) return error.message
+  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') return error.message
+  return 'Something went wrong. Please try again.'
+}
+
+async function getAuthenticatedUser(userId: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase.auth.getUser()
+  if (error) return { supabase, error }
+  if (!data.user) return { supabase, error: new Error('Please sign in to manage saved locations.') }
+  if (data.user.id !== userId) return { supabase, error: new Error('Your session changed. Refresh the page and try again.') }
+  return { supabase, error: null }
 }
 
 export async function getSavedLocations(userId: string) {
-  return createClient().from('saved_locations').select('id,user_id,name,latitude,longitude,created_at').eq('user_id', userId).order('created_at', { ascending: false })
+  const { supabase, error } = await getAuthenticatedUser(userId)
+  if (error) return { data: null, error }
+  return supabase.from('saved_locations').select('id,user_id,name,latitude,longitude,created_at').eq('user_id', userId).order('created_at', { ascending: false })
 }
 
 export async function saveLocation(userId: string, location: Pick<SavedLocation, 'name' | 'latitude' | 'longitude'>) {
-  const supabase = createClient()
+  const { supabase, error } = await getAuthenticatedUser(userId)
+  if (error) return { data: null, error, duplicate: false }
   const existing = await supabase.from('saved_locations').select('id,latitude,longitude').eq('user_id', userId)
   if (existing.error) return { data: null, error: existing.error, duplicate: false }
   const duplicate = existing.data?.some((item) => Math.abs(Number(item.latitude) - location.latitude) < 0.0001 && Math.abs(Number(item.longitude) - location.longitude) < 0.0001)
   if (duplicate) return { data: null, error: null, duplicate: true }
-  const result = await supabase.from('saved_locations').insert({ user_id: userId, name: location.name, latitude: location.latitude, longitude: location.longitude }).select('id,user_id,name,latitude,longitude,created_at').single()
+  const result = await supabase.from('saved_locations').insert({ user_id: userId, name: location.name.trim(), latitude: location.latitude, longitude: location.longitude }).select('id,user_id,name,latitude,longitude,created_at').single()
   return { ...result, duplicate: false }
 }
 
 export async function deleteSavedLocation(userId: string, id: string) {
-  return createClient().from('saved_locations').delete().eq('id', id).eq('user_id', userId)
+  const { supabase, error } = await getAuthenticatedUser(userId)
+  if (error) return { data: null, error }
+  return supabase.from('saved_locations').delete().eq('id', id).eq('user_id', userId)
 }
 
 export type LocationReading = {
